@@ -2,6 +2,16 @@
 # This only has PAs, so combine with Natl Woodland Owner Survey summaries
 # Want public, private - lrg, private - sml
 
+
+
+
+## Load study area ecosections
+# src: https://data.fs.usda.gov/geodata/rastergateway/forest_type/ 
+eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
+crs(eco.ne) ; proj.crs <- paste(crs(eco.ne))
+plot(eco.ne)
+
+
 ## Load states
 NAmer <- st_read(dsn = "D:/Shared/BackedUp/Caitlin/boundaries/NorthAmer_StatesProvinces.shp") %>%
   st_buffer(dist = 0) # fix invalid geometries (warning re: lat/long vs. dd)
@@ -11,41 +21,41 @@ ne.sts <- c("US-CT", "US-MA", "US-ME", "US-NH", "US-NJ", "US-NY", "US-PA", "US-R
 ne <- NAmer[NAmer$STATEABB == "US-CT"|NAmer$STATEABB == "US-MA"|NAmer$STATEABB == "US-ME"|
               NAmer$STATEABB == "US-NH"|NAmer$STATEABB == "US-NJ"| NAmer$STATEABB == "US-NY"|
               NAmer$STATEABB == "US-PA"|NAmer$STATEABB == "US-RI"|NAmer$STATEABB == "US-VT" ,]
-ne$COUNTRY <- droplevels(ne$COUNTRY)
-ne$NAME <- droplevels(ne$NAME)
-ne$STATEABB <- droplevels(ne$STATEABB)
-plot(ne)
+ne %>% st_transform(crs = proj.crs) %>% st_buffer(dist = 0)
 
 
 
 ## Load in forest cover types
-# src: https://data.fs.usda.gov/geodata/rastergateway/forest_type/ 
-
 fortype <- raster("D:/Shared/BackedUp/Caitlin/ForestCoverType/conus_foresttype.img")
 plot(fortype)
 
 # Clip to study area (use it's own crs in mask so can avoid projecting raster)
-ne.mask <- ne %>% st_transform(crs = paste0(crs(fortype))) %>% st_buffer(dist = 0)
-plot(ne.mask)
-for.ne <- fortype %>% crop(ne.mask) #%>% mask(ne.mask) 
-# ^ Not continuing w/ mask b/c CT had some length > 0 FALSE.
+eco.ne.mask <- eco.ne %>% st_transform(crs = paste0(crs(fortype))) %>% st_buffer(dist = 0)
+plot(eco.ne.mask)
+for.ne <- fortype %>% crop(eco.ne.mask) %>% mask(eco.ne.mask) 
 plot(for.ne)
 
-# Project back to lat/long
-temp <- for.ne %>% projectRaster(crs = crs(ne))
+# Set all zeros to NA
+for.ne[for.ne <= 0] <- NA
 
 
-zoom(for.ne)
+# Project to desired crs and res (270 is what LANDIS will use)
+for.ne <- for.ne %>% projectRaster(crs = proj.crs, res = c(270,270))
+# Set 
+for.ne[for.ne <= 0] <- NA
+crs(for.ne)
+res(for.ne) # weirdly rectangular pixels.
 
-?crop
 
-st_is_valid(ne.mask)
-paste0(crs(fortype))
 
-crs(NAmer)
-length(ne.mask)
-st_write(vtnh, "D:/Shared/BackedUp/Caitlin/boundaries/vt_nh.shp")
-st_write(ne, "D:/Shared/BackedUp/Caitlin/boundaries/ne.shp")
+## Load in study area ecosections
+# src: https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=geoscientificinformation
+
+eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
+plot(ecosec)
+crs(ecosec)
+
+
 
 
 ## Load PADUS

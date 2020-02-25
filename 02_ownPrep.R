@@ -694,17 +694,64 @@ r.vt.fin <- rsieve*0+1
 
 #################### combine ################################################################
 
+
+## Combine all state rasters into a single one
 # List all final state rasters
 (temp <- grep(".fin",names(.GlobalEnv),value=TRUE))
 ls.r <- do.call("list",mget(temp))
 
-# Mosaic all states back together; use do.call for list.
-mosaic <- mosaic(r.ny.fin, r.nh.fin, r.vt.fin, r.pa.fin, r.ma.fin, r.me.fin, r.nj.fin, r.ct.fin, r.ri.fin, fun = mean)
+# Merge all together
+fam <- do.call(merge, ls.r)
+
+# Set equal to 3 for categorization below
+fam[!is.na(fam)] <- 3
+plot(fam)
+
+# writeRaster(m, "for.fam.gte10.tiff")
 
 
-names(ls.r)[1:2] <- c('x', 'y') # mosaic arg requires x & y
-ls.r$fun <- mean # mosaic arg, to be called in do.call
-ls.r$na.rm <- TRUE # mosaic arg, to be called in do.call
-m <- do.call(mosaic, ls.r)
 
-m <- mosaic()
+## Merge with original own.ne
+levels(own.ne) # WHY ARE THESE DIFFERENT THAN freq(own.ne)???
+# [[1]]
+# ID    COUNT OWNERSHIP_TYPE
+# 1  0 80037780     NON-FOREST ; set to NA
+# 2  1 13683707        FEDERAL ; set to public (1)
+# 3  2  4125383          STATE ; set to public (1)
+# 4  3   749752          LOCAL ; set to public (1)
+# 5  4 16402213         FAMILY ; set to priv_fam_gte10ac (3)
+# 6  5  7300505      CORPORATE ; set to priv_xtra_lrg (2)
+# 7  6   745337  OTHER-PRIVATE ; set to priv_xtra_lrg (2)
+# 8  7  1354249         TRIBAL ; set to priv_xtra_lrg (2)
+
+
+# Reclassify to 3 ownership types.
+t <- own.ne
+t[t == 0] <- NA
+t[t == 1] <- 1
+t[t == 2] <- 1
+t[t == 3] <- 1
+t[t == 4] <- 0 # b/c I'll be adding in redefined fam layer
+t[t == 5] <- 2
+t[t == 6] <- 2
+t[t == 7] <- 2
+plot(t)
+plot(fam)
+
+
+# Make sure extents match before adding
+extent(t)
+extent(fam)
+fam <- extend(fam, t)
+
+
+# Add rasters; remove NA else any input NA persists to output
+t2 <- sum(t, fam, na.rm=T) 
+
+# Any persistant zeros from t are too-small fam land. Set = NA
+t2[t2 == 0] <- NA
+
+plot(t2)
+
+writeRaster(t2, "for.all.gte10.tif")
+

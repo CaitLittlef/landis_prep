@@ -1,6 +1,8 @@
 ## For each state, reduce fam forest to match 10+acre area from NWOS.
 # Check each state area in raster to match NWOS (e.g., reduce PA b/c small chunk)
 # Iteratively remove smallest patches til size achieved.
+# Note that for some states (e.g., Maine), forest raster is already too small relative to NWOS.
+# In those cases, not removing ANY area and just setting rc --> final (instead of rsieve --> final)
 
 
 ##### FIXME: create loop for all states. N.b., only NJ, NH, NY, PA, RI have prop -- all should.
@@ -25,15 +27,12 @@ plot(r)
 
 
 # B/c only using proportions of some states, scale target forest area in study area raster
-ncell(r) 
 # While full state area is...
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) 
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
-
 
 
 # Detect clumps of rasters and assign unique ID
@@ -48,8 +47,8 @@ f.rc<-as.data.frame(freq(rc))
 
 
 # Get list of clumps that I want to exclude; trialed w/ various clump sizes
-excludeID <- f.rc[f.rc$count < 459,]
-excludeID <- as.vector(excludeID$value)
+excludeID <- f.rc[f.rc$count < 459,] 
+excludeID <- as.vector(excludeID$value); length(excludeID)
 
 
 # Make a new raster to be sieved, retaining only bigger clumps.
@@ -69,8 +68,8 @@ sieved <- sum(f.rsieve$count[!is.na(f.rsieve$value)])
 # How does this compare to gte10 acre fam forest area in state -- our target? Res = 250x250m
 trgt <- lu.st$fam_for_area_gte10_m2[lu.st$st_name == paste0(state.abb)]
 trgt*prop - (sieved*250*250) 
-# If negative, sieved (w/ for removed) still has more forest than target
-# If positive, sieved (w/ for removed) now has too little land relative to target
+# If negative, sieved (w/ forest removed) still has more forest than target
+# If positive, sieved (w/ forest removed) now has too little land relative to target
 
 # clumps of 459 leaves -3649760 <- keep b/c smaller differential
 # clumps of 460 leaves 25037740
@@ -97,16 +96,12 @@ plot(r)
 
 
 # B/c only using proportions of some states, scale target forest area in study area raster
-ncell(r) 
 # While full state area is...
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) 
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
-
-
 
 
 # Detect clumps of rasters and assign unique ID
@@ -124,7 +119,7 @@ sum(f.rc$count[!is.na(f.rc$value)]); ncell(r[!is.na(r)])
 excludeID <- f.rc[f.rc$count < 2,]
 excludeID <- as.vector(excludeID$value)
 
-# For Maine, removing all clumps of 1 (<2) still removes too much. 
+# For this state, removing all clumps <2 still removes too much and I can't make smaller clumps.
 # Randomize excludeIDs and then keep only half... or a quarter... or even fewer...
 # excludeID <- sample(excludeID, length(excludeID)/2)
 # excludeID <- sample(excludeID, length(excludeID)/4)
@@ -196,12 +191,10 @@ plot(rc)
 
 
 # B/c only using proportions of some states, scale target forest area in study area raster
-ncell(r) 
 # While full state area is...
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) 
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
 
@@ -265,12 +258,10 @@ plot(r)
 
 
 # B/c only using portion of NJ, will need to scale target forest area
-ncell(r) # 186835
 # Whereas full NJ area is r <- own.ne %>%
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) # 512732
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
 
@@ -418,17 +409,12 @@ plot(r)
 
 
 # B/c only using proportions of some states, scale target forest area in study area raster
-ncell(r) 
 # While full state area is...
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) 
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
-
-
-
 
 
 # Detect clumps of rasters and assign unique ID
@@ -447,7 +433,7 @@ excludeID <- f.rc[f.rc$count < 2,]
 excludeID <- as.vector(excludeID$value)
 
 
-# For New York, removing all clumps of 1 (<2) still removes too much. 
+# For this state, removing all clumps of 1 (<2) still removes too much. 
 # Randomize excludeIDs and then keep only half... or a quarter... or even fewer...
 excludeID <- sample(excludeID, length(excludeID)/6000)
 excludeID <- sample(excludeID, size = 1)
@@ -504,12 +490,10 @@ plot(r)
 
 
 # b/c only using proportions of some states, scale target forest area in study area raster
-ncell(r) 
 # While full state area is...
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) 
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
 
@@ -566,8 +550,78 @@ r.pa.fin <- rc*0+1
 
 
 
+#################### RI ################################################################ 
 
-#################### VT ####
+state.name <- "Rhode Island"
+state.abb <- "RI"
+
+# Clip forest ownerships to state
+r <- own.ne %>%
+  crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
+  mask(ne.sts[ne.sts$NAME == paste0(state.name),])
+plot(r)
+
+
+# Retain only family forest; remove what's NOT 4, don't keep 4 (idk latter won't work)
+r[! r == 4] <- NA
+plot(r)
+
+
+# b/c only using proportions of some states, scale target forest area in study area raster
+# While full state area is...
+full <- own.fam %>%
+  crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
+  mask(ne.sts[ne.sts$NAME == paste0(state.name),])
+# Scale target by this proportion
+(prop <- ncell(r)/ncell(full))
+
+
+
+# Detect clumps of rasters and assign unique ID
+rc <- raster::clump(r, directions = 4)
+plot(rc)
+
+
+# Get clump frequency table, which gives cell count   
+f.rc<-as.data.frame(freq(rc))
+# cells in forest should equals sum of those clump cell counts
+# sum(f.rc$count[!is.na(f.rc$value)]); ncell(r[!is.na(r)]) 
+
+
+# Get list of clumps that I want to exclude; trialed w/ various clump sizes
+excludeID <- f.rc[f.rc$count < 383,]
+excludeID <- as.vector(excludeID$value) 
+
+
+# Make a new raster to be sieved, retaining only bigger clumps.
+rsieve <- rc
+# Assign NA to all clumps whose IDs are found in excludeID
+rsieve[rsieve %in% excludeID] <- NA
+plot(rsieve)
+# zoom(rsieve)
+
+# How much area has been retained?
+f.rsieve <- as.data.frame(freq(rsieve))
+# sum(f.rsieve$count[!is.na(f.rsieve$value)]) ; ncell(rsieve[!is.na(rsieve)]) 
+sieved <- sum(f.rsieve$count[!is.na(f.rsieve$value)])
+
+
+# How does this compare to gte10 acre fam forest area in state -- our target? Res = 250x250m
+trgt <- lu.st$fam_for_area_gte10_m2[lu.st$st_name == paste0(state.abb)]
+trgt*prop - (sieved*250*250)
+# If negative, sieved (w/ for removed) still has more forest than target
+# If positive, sieved (w/ for removed) now has too little land relative to target
+
+# remove clumps < 6: -181814000
+# remove clumps < 382:-12939000
+# remove clumps <383:  10936000 <- retain
+
+# Stick with smaller differential.
+
+r.ri.fin <- rsieve*0+1
+
+
+#################### VT ################################################################ 
 
 state.name <- "Vermont"
 state.abb <- "VT"
@@ -585,12 +639,10 @@ plot(r)
 
 
 # b/c only using proportions of some states, scale target forest area in study area raster
-ncell(r) 
 # While full state area is...
 full <- own.fam %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
-ncell(full) 
 # Scale target by this proportion
 (prop <- ncell(r)/ncell(full))
 
@@ -628,6 +680,9 @@ sieved <- sum(f.rsieve$count[!is.na(f.rsieve$value)])
 # How does this compare to gte10 acre fam forest area in state -- our target? Res = 250x250m
 trgt <- lu.st$fam_for_area_gte10_m2[lu.st$st_name == paste0(state.abb)]
 trgt*prop - (sieved*250*250) 
+# If negative, sieved (w/ for removed) still has more forest than target
+# If positive, sieved (w/ for removed) now has too little land relative to target
+
 # remove clumps < 6: -11740940, sieved (w/ for removed) still has more forest than target
 # remove clumps < 7:   5134060, sieved (w/ for removed) now has too little land relative to target
 
@@ -637,3 +692,19 @@ r.vt.fin <- rsieve*0+1
 
 
 
+#################### combine ################################################################
+
+# List all final state rasters
+(temp <- grep(".fin",names(.GlobalEnv),value=TRUE))
+ls.r <- do.call("list",mget(temp))
+
+# Mosaic all states back together; use do.call for list.
+mosaic <- mosaic(r.ny.fin, r.nh.fin, r.vt.fin, r.pa.fin, r.ma.fin, r.me.fin, r.nj.fin, r.ct.fin, r.ri.fin, fun = mean)
+
+
+names(ls.r)[1:2] <- c('x', 'y') # mosaic arg requires x & y
+ls.r$fun <- mean # mosaic arg, to be called in do.call
+ls.r$na.rm <- TRUE # mosaic arg, to be called in do.call
+m <- do.call(mosaic, ls.r)
+
+m <- mosaic()

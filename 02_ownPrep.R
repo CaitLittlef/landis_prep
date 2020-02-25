@@ -5,6 +5,60 @@
 # In those cases, not removing ANY area and just setting rc --> final (instead of rsieve --> final)
 
 
+######################### OWNERSHIPS ###################################################
+
+## Load ownership
+# src: https://www.fs.usda.gov/rds/archive/catalog/RDS-2017-0007 - Hewes, Jaketon H.; Butler, Brett J.; Liknes, Greg C. 2017. Forest ownership in the conterminous United States circa 2014: distribution of seven ownership types - geospatial dataset. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2017-0007
+own <- raster(paste0(data.dir, "/RDS-2017-0007/Data/forown2016"))
+plot(own)
+# Save layer of only fam ownerships for future use
+own.fam <- own
+own.fam[! own.fam == 4] <- NA
+# Clip to study area (use it's own crs in mask so can avoid projecting raster)
+eco.ne.mask <- eco.ne %>%
+  st_transform(crs = paste0(crs(own))) %>%
+  st_buffer(dist = 0)
+plot(eco.ne.mask)
+own.ne <- own %>% crop(eco.ne.mask) %>% mask(eco.ne.mask)
+plot(own.ne)
+
+# writeRaster(own.ne, "own.ne.tif", overwrite=TRUE)
+# own.ne <- raster("own.ne.tif") # Note that attrbiutes (e.g., ownership names get lost in save)
+
+# zoom(own.ne)
+
+levels(own.ne)
+# [[1]]
+# ID    COUNT OWNERSHIP_TYPE
+# 1  0 80037780     NON-FOREST
+# 2  1 13683707        FEDERAL
+# 3  2  4125383          STATE
+# 4  3   749752          LOCAL
+# 5  4 16402213         FAMILY
+# 6  5  7300505      CORPORATE
+# 7  6   745337  OTHER-PRIVATE
+# 8  7  1354249         TRIBAL
+
+
+# Get raster data ready for plotting
+plot.data <- gplot_data(own.ne)
+
+palette <- brewer.pal(8, "Dark2")
+g <- ggplot() + 
+  geom_raster(data = plot.data, aes(x = x, y = y, fill = OWNERSHIP_TYPE)) +
+  # geom_sf(data = temp) + 
+  scale_fill_manual(values = palette, na.value = NA) +
+  theme_bw(base_size = 12) + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),# blend lat/long into background
+        panel.border = element_rect(fill = NA, color = "black", size = 0.5),
+        # panel.background = element_rect(fill = "),
+        axis.title = element_blank(),
+        legend.background = element_rect(fill = "white", color = "black", size = 0,5))
+g
+
+
+
 ##### FIXME: create loop for all states. N.b., only NJ, NH, NY, PA, RI have prop -- all should.
 
 
@@ -690,7 +744,8 @@ trgt*prop - (sieved*250*250)
 
 r.vt.fin <- rsieve*0+1
 
-
+rm(r, rc, rsieve, full)
+remove(list = ls(pattern = "r."))
 
 #################### combine ################################################################
 
@@ -701,13 +756,14 @@ r.vt.fin <- rsieve*0+1
 ls.r <- do.call("list",mget(temp))
 
 # Merge all together
-fam <- do.call(merge, ls.r)
+fam <- do.call("merge", ls.r)
+rm(ls.r)
 
 # Set equal to 3 for categorization below
 fam[!is.na(fam)] <- 3
 plot(fam)
 
-# writeRaster(m, "for.fam.gte10.tiff")
+# writeRaster(m, "own.fam.gte10.tiff")
 
 
 
@@ -753,5 +809,7 @@ t2[t2 == 0] <- NA
 
 plot(t2)
 
-writeRaster(t2, "for.all.gte10.tif")
+# writeRaster(t2, "own.all.gte10.tif")
 
+own.MA <- t2
+rm(fam, t, t2)

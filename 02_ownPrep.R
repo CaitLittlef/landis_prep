@@ -745,7 +745,7 @@ trgt*prop - (sieved*250*250)
 r.vt.fin <- rsieve*0+1
 
 rm(r, rc, rsieve, full)
-remove(list = ls(pattern = "r."))
+
 
 #################### combine ################################################################
 
@@ -755,8 +755,10 @@ remove(list = ls(pattern = "r."))
 (temp <- grep(".fin",names(.GlobalEnv),value=TRUE))
 ls.r <- do.call("list",mget(temp))
 
-# Merge all together
-fam <- do.call("merge", ls.r)
+
+###### FIXME: NO IDEA WHY THIS NO LONGER WORKS!!
+# Merge all together 
+fam <- do.call(merge, ls.r)
 rm(ls.r)
 
 # Set equal to 3 for categorization below
@@ -813,3 +815,4 @@ plot(t2)
 
 own.MA <- t2
 rm(fam, t, t2)
+remove(list = ls(pattern = "r.$$.fin"))

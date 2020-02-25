@@ -106,16 +106,16 @@ plot(own)
 own.fam <- own
 own.fam[! own.fam == 4] <- NA
 # Clip to study area (use it's own crs in mask so can avoid projecting raster)
-# eco.ne.mask <- eco.ne %>%
-#   st_transform(crs = paste0(crs(own))) %>%
-#   st_buffer(dist = 0)
-# plot(eco.ne.mask)
-# own.ne <- own %>% crop(eco.ne.mask) %>% mask(eco.ne.mask) 
-# plot(own.ne)
-# 
-# writeRaster(own.ne, "own.ne.tif", overwrite=TRUE)
-own.ne <- raster("own.ne.tif")
+eco.ne.mask <- eco.ne %>%
+  st_transform(crs = paste0(crs(own))) %>%
+  st_buffer(dist = 0)
+plot(eco.ne.mask)
+own.ne <- own %>% crop(eco.ne.mask) %>% mask(eco.ne.mask)
 plot(own.ne)
+
+# writeRaster(own.ne, "own.ne.tif", overwrite=TRUE)
+# own.ne <- raster("own.ne.tif") # Note that attrbiutes (e.g., ownership names get lost in save)
+
 # zoom(own.ne)
 
 levels(own.ne)
@@ -134,6 +134,7 @@ levels(own.ne)
 # Get raster data ready for plotting
 plot.data <- gplot_data(own.ne)
 
+palette <- brewer.pal(8, "Dark2")
 g <- ggplot() + 
   geom_raster(data = plot.data, aes(x = x, y = y, fill = OWNERSHIP_TYPE)) +
   # geom_sf(data = temp) + 

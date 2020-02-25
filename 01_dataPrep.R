@@ -9,7 +9,8 @@
 # src: https://data.fs.usda.gov/geodata/rastergateway/forest_type/ 
 eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
 crs(eco.ne) ; proj.crs <- paste(crs(eco.ne))
-plot(eco.ne)
+# plot(eco.ne)
+
 # Also create boundary
 bbox <- as(extent(eco.ne), "SpatialPolygons") 
 proj4string(bbox) <- paste0(proj.crs)
@@ -22,31 +23,38 @@ bbox <- st_as_sf(bbox)
 NAmer <- st_read(dsn = "D:/Shared/BackedUp/Caitlin/boundaries/NorthAmer_StatesProvinces.shp") %>%
   st_buffer(dist = 0) # fix invalid geometries (warning re: lat/long vs. dd)
 NAmer <- NAmer[!NAmer$NAME == "Guam",]
-levels(NAmer$STATEABB)
+levels(NAmer$NAME)
 # ne.sts <- c("US-CT", "US-ME", "US-MA", "US-NH", "US-NJ", "US-NY", "US-PA", "US-RI", "US-VT")
-ne.sts <- NAmer[NAmer$STATEABB == "US-CT"|NAmer$STATEABB == "US-ME"|NAmer$STATEABB == "US-MA"|
-              NAmer$STATEABB == "US-NH"|NAmer$STATEABB == "US-NJ"| NAmer$STATEABB == "US-NY"|
-              NAmer$STATEABB == "US-PA"|NAmer$STATEABB == "US-RI"|NAmer$STATEABB == "US-VT" ,]
+ne.sts <- NAmer[NAmer$NAME == "Connecticut"|NAmer$NAME == "Maine"|NAmer$NAME == "Massachusetts"|
+              NAmer$NAME == "New Hampshire"|NAmer$NAME == "New Jersey"| NAmer$NAME == "New York"|
+              NAmer$NAME == "Pennsylvania"|NAmer$NAME == "Rhode Island"|NAmer$NAME == "Vermont" ,]
 rm(NAmer)
-ne.sts %>% st_transform(crs = proj.crs) %>% st_buffer(dist = 0)
+ne.sts <- ne.sts %>% st_transform(crs = proj.crs) %>% st_buffer(dist = 0)
+class(ne.sts)
 plot(ne.sts)
 
-# Add state sizes (this gives multi-parts)
-ne.sts$st_area_m2 <- as.numeric(st_area(ne.sts))
-ne.sts$st_area_km2 <- as.numeric(st_area(ne.sts))/1000000
-ne.sts$st_area_acre <- as.numeric(st_area(ne.sts))*0.000247105
+# # Add state sizes (this gives multi-parts)
+# ne.sts$st_area_m2 <- as.numeric(st_area(ne.sts))
+# ne.sts$st_area_km2 <- as.numeric(st_area(ne.sts))/1000000
+# ne.sts$st_area_acre <- as.numeric(st_area(ne.sts))*0.000247105
 
-# Create table and combine state areas into single areas
-ne.sts.tbl <- ne.sts
-st_geometry(ne.sts.tbl) <- NULL
-ne.sts.tbl <- ne.sts.tbl %>%
-  group_by(STATEABB) %>%
-  summarise(st_area_m2 = sum(st_area_m2),
-         st_area_km2 = sum(st_area_km2),
-         st_area_acre = sum(st_area_acre))
-ne.sts.tbl$STATEABB <- as.character(ne.sts.tbl$STATEABB)
-ne.sts.tbl$st_name <- right(ne.sts.tbl$STATEABB, 2)
+# # Create table and combine state areas into single areas
+# ne.sts.tbl <- ne.sts
+# st_geometry(ne.sts.tbl) <- NULL
+# ne.sts.tbl <- ne.sts.tbl %>%
+#   group_by(STATEABB) %>%
+#   summarise(st_area_m2 = sum(st_area_m2),
+#          st_area_km2 = sum(st_area_km2),
+#          st_area_acre = sum(st_area_acre))
+# ne.sts.tbl$STATEABB <- as.character(ne.sts.tbl$STATEABB)
+# ne.sts.tbl$st_name <- right(ne.sts.tbl$STATEABB, 2)
 
+
+
+## Load look-up for state fam forest areas from NWOS
+lu.st <- read.csv("st_for_area.csv")
+# Keep only m2 
+lu.st <- lu.st[,c(1,2,7,8)]
 
 
 ## Load counties
@@ -58,17 +66,17 @@ keeps.names <- c("CT", "ME", "MA", "NH", "NJ", "NY", "PA", "RI", "VT")
 ne.counties <- counties[counties$STATEFP %in% keeps.FIPS,]
 lu.FIPS <- data.frame(FIPS = keeps.FIPS, st_name = keeps.names)
 
-# Keep only counties in study area; 
+# Keep only counties in study area;
 county <- st_crop(ne.counties, bbox) ; rm(counties, ne.counties)
 
 # Keep only useful columns
 county <- county %>% dplyr::select(STATEFP, COUNTYFP, GEOID, NAME)
 county$GEOID <- droplevels(county$GEOID)
 
-# Add county size (at least what's IN study area)
-county$cnty_area_m2 <- as.numeric(st_area(county))
-county$cnty_area_km2 <- as.numeric(st_area(county))/1000000
-county$cnty_area_acre <- as.numeric(st_area(county))*0.000247105
+# # Add county size (at least what's IN study area)
+# county$cnty_area_m2 <- as.numeric(st_area(county))
+# county$cnty_area_km2 <- as.numeric(st_area(county))/1000000
+# county$cnty_area_acre <- as.numeric(st_area(county))*0.000247105
 
 # # Convert to table
 # county.tbl <- county
@@ -94,14 +102,21 @@ county$cnty_area_acre <- as.numeric(st_area(county))*0.000247105
 # src: https://www.fs.usda.gov/rds/archive/catalog/RDS-2017-0007 - Hewes, Jaketon H.; Butler, Brett J.; Liknes, Greg C. 2017. Forest ownership in the conterminous United States circa 2014: distribution of seven ownership types - geospatial dataset. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2017-0007
 own <- raster(paste0(data.dir, "/RDS-2017-0007/Data/forown2016"))
 plot(own)
+# Save layer of only fam ownerships for future use
+own.fam <- own
+own.fam[! own.fam == 4] <- NA
 # Clip to study area (use it's own crs in mask so can avoid projecting raster)
-eco.ne.mask <- eco.ne %>%
-  st_transform(crs = paste0(crs(own))) %>%
-  st_buffer(dist = 0)
-plot(eco.ne.mask)
-own.ne <- own %>% crop(eco.ne.mask) %>% mask(eco.ne.mask) 
+# eco.ne.mask <- eco.ne %>%
+#   st_transform(crs = paste0(crs(own))) %>%
+#   st_buffer(dist = 0)
+# plot(eco.ne.mask)
+# own.ne <- own %>% crop(eco.ne.mask) %>% mask(eco.ne.mask) 
+# plot(own.ne)
+# 
+# writeRaster(own.ne, "own.ne.tif", overwrite=TRUE)
+own.ne <- raster("own.ne.tif")
 plot(own.ne)
-zoom(own.ne)
+# zoom(own.ne)
 
 levels(own.ne)
 # [[1]]
@@ -114,6 +129,30 @@ levels(own.ne)
 # 6  5  7300505      CORPORATE
 # 7  6   745337  OTHER-PRIVATE
 # 8  7  1354249         TRIBAL
+
+
+# Get raster data ready for plotting
+plot.data <- gplot_data(own.ne)
+
+g <- ggplot() + 
+  geom_raster(data = plot.data, aes(x = x, y = y, fill = OWNERSHIP_TYPE)) +
+  # geom_sf(data = temp) + 
+  scale_fill_manual(values = palette, na.value = NA) +
+  theme_bw(base_size = 12) + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),# blend lat/long into background
+        panel.border = element_rect(fill = NA, color = "black", size = 0.5),
+        # panel.background = element_rect(fill = "),
+        axis.title = element_blank(),
+        legend.background = element_rect(fill = "white", color = "black", size = 0,5))
+g
+
+
+
+
+
+
+
 
 
 
@@ -142,13 +181,12 @@ for.ne <- forgrp %>% crop(eco.ne.mask) %>% mask(eco.ne.mask)
 plot(for.ne)
 # zoom(for.ne)
 
-
 # Set all zeros and non-relevant values to NA
 for.ne[for.ne == 0] <- NA
-# Create template raster (all for pixels = 1)
-for.1 <- for.ne
-for.1 <- for.1*0+1
-plot(for.1)
+# # Create template raster (all for pixels = 1)
+# for.1 <- for.ne
+# for.1 <- for.1*0+1
+# plot(for.1)
 
 
 
@@ -214,13 +252,5 @@ padus.gdb <- "D:/Shared/BackedUp/Caitlin/PADUS2.0/PADUS2_0.gdb"
 layer.list <- ogrListLayers(padus.gdb)
 
 padus <- st_read(dsn = "D:/Shared/BackedUp/Caitlin/PADUS2.0/PADUS_fee_desig_esmt_CONUS_200131.shp")
-valid = st_is_valid(padus)
-st_buffer(padus[!is.na(valid)], 0.0)
-padus <- 
-padus <- padus %>% st_buffer(dist = 0) # fixes some invalid geometries
-any(is.na(st_dimension(padus)))
-any(length(padus)== 0)
-st_is_valid(padus)
-st_make_valid(padus)
-?st_make_valid
+
 

@@ -11,7 +11,7 @@ out.dir <- "D:/Shared/BackedUp/Caitlin/landis_prep/output/"
 
 #####################################
 # Install packages if not already installed
-required.packages <- c("ggplot2", "raster", "fasterize", "sf", "rgdal", "dplyr",
+required.packages <- c("ggplot2", "raster", "igraph", "fasterize", "sf", "rgdal", "dplyr",
                        "tidyverse", "maptools", "rgeos", 
                        "partykit", "vcd", "maps", "mgcv", "tmap",
                        "MASS", "pROC", "ResourceSelection", "caret", "broom", "boot",
@@ -24,6 +24,7 @@ rm(required.packages, new.packages)
 # Libraries
 library(ggplot2)
 library(raster)
+library(igraph)
 library(fasterize)
 # library(sp)
 library(sf)

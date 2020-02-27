@@ -16,7 +16,7 @@ required.packages <- c("ggplot2", "raster", "igraph", "fasterize", "sf", "rgdal"
                        "partykit", "vcd", "maps", "mgcv", "tmap",
                        "MASS", "pROC", "ResourceSelection", "caret", "broom", "boot",
                        "dismo", "pscl", "randomForest", "pdp", "classInt", "plotmo",
-                       "ggspatial", "lmtest", "landscapemetrics")
+                       "ggspatial", "lmtest", "landscapemetrics", "formattable")
 new.packages <- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)>0) install.packages(new.packages)
 rm(required.packages, new.packages)
@@ -53,6 +53,7 @@ library(plotmo)
 library(ggspatial)
 library(lmtest)
 library(landscapemetrics)
+library(formattable)
 
 # rm(GCtorture)
 
@@ -185,7 +186,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 library(RColorBrewer)
 display.brewer.all(7)
 display.brewer.pal(7, "Set1")
-palette <- brewer.pal(7, "Set1")
+palette <- brewer.pal(7, "Set2")
 
 display.brewer.all(colorblindFriendly = TRUE)
 display.brewer.pal(8, "Dark2")
@@ -213,7 +214,7 @@ theme_caitlin <- function(base_size=12, base_family="sans") {
 ## To plot raster in ggplot, extract values into tibble
 # ref: https://stackoverflow.com/questions/47116217/overlay-raster-layer-on-map-in-ggplot2-in-r
 # Define function to extract raster values into a tibble
-gplot_data <- function(x, maxpixels = 50000)  {
+gplot_data <- function(x, maxpixels = 500000)  {
   x <- raster::sampleRegular(x, maxpixels, asRaster = TRUE)
   coords <- raster::xyFromCell(x, seq_len(raster::ncell(x)))
   ## Extract values

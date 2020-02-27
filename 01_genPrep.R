@@ -6,12 +6,23 @@ eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
 crs(eco.ne) ; proj.crs <- paste(crs(eco.ne))
 # plot(eco.ne)
 
+# Dissolve to extent
+eco.ne.dslv <- st_union(eco.ne)
+# plot(st_geometry(eco.ne.dslv))
+
+
 # Also create boundary
 bbox <- as(extent(eco.ne), "SpatialPolygons") 
 proj4string(bbox) <- paste0(proj.crs)
 bbox <- st_as_sf(bbox)
 
 
+
+# Load H2O
+lakes <- st_read("D:/Shared/BackedUp/Caitlin/Water/NAmer_lakes.shp")
+lakes <- water %>% st_transform(crs = proj.crs)
+ne.lakes <- water %>% st_crop(bbox)
+plot(ne.lakes)
 
 ######################### STATES ###################################################
 
@@ -20,14 +31,18 @@ NAmer <- st_read(dsn = "D:/Shared/BackedUp/Caitlin/boundaries/NorthAmer_StatesPr
   st_buffer(dist = 0) # fix invalid geometries (warning re: lat/long vs. dd)
 NAmer <- NAmer[!NAmer$NAME == "Guam",]
 levels(NAmer$NAME)
+NAmer <- NAmer %>% st_transform(crs = proj.crs) %>% st_buffer(dist = 0)
 ne.sts <- NAmer[NAmer$NAME == "Connecticut"|NAmer$NAME == "Maine"|NAmer$NAME == "Massachusetts"|
               NAmer$NAME == "New Hampshire"|NAmer$NAME == "New Jersey"| NAmer$NAME == "New York"|
               NAmer$NAME == "Pennsylvania"|NAmer$NAME == "Rhode Island"|NAmer$NAME == "Vermont" ,]
-rm(NAmer)
+# rm(NAmer)
 ne.sts <- ne.sts %>% st_transform(crs = proj.crs) %>% st_buffer(dist = 0)
 class(ne.sts)
 plot(ne.sts)
 
+ne.reg <- NAmer %>% st_crop(bbox)
+ne.reg.dslv <- st_union(ne.reg)
+plot(st_geometry(ne.reg.dslv))
 
 ## Load look-up for state fam forest areas from NWOS
 lu.st <- read.csv("st_for_area.csv")
@@ -92,8 +107,8 @@ for.ne[for.ne == 0] <- NA
 
 
 # What's frequency of types?
-# freq <- data.frame(freq(for.ne)) ; colnames(freq) <- c("code", "count")
-# (freq <- left_join(freq, lu.for, by = "code"))
+freq <- data.frame(freq(for.ne)) ; colnames(freq) <- c("code", "count")
+(freq <- left_join(freq, lu.for, by = "code"))
 # 1	100	169556	White/Red/Jack Pine Group
 # 2	120	483841	Spruce/Fir Group
 # 3	160	9240	Loblolly/Shortleaf Pine Group
@@ -118,6 +133,17 @@ for.ne[for.ne == 200] <- 400 #(Doug-fir why?? to oak/pine)
 for.ne[for.ne == 380] <- 400 #(exotic softwood to oak/pine)
 for.ne[for.ne == 500] <- 400 #(oak/hickory to oak/pine)
 for.ne[for.ne == 600] <- 400 #(oak/gum/cypress to oak/pine)
+
+reclass <- data.frame(freq$code[1:12], freq$for.grp[1:12])
+reclass$new <- c("c. hw-pine", "spruce-fir", "c. hw-pine", "c. hw-pine",
+                 "c. hw-pine", "c. hw pine", "c. hw-pine", "c. hw-pine",
+                 "c. hw-pine", "lowland", "n. hw", "n. hw")
+colnames(reclass) <- c("Forest code", "Forest type", "Reclassification")
+formattable(reclass, align =c("l","c","r")) #, 
+            list(`Forest code` = formatter(
+              "span", style = ~ style(color = "grey",font.weight = "bold")) 
+            ))
+
 
 # Get raster data ready for plotting
 plot.data <- gplot_data(for.ne)

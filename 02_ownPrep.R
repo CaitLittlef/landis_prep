@@ -815,4 +815,4 @@ plot(t2)
 
 own.MA <- t2
 rm(fam, t, t2)
-remove(list = ls(pattern = "r.$$.fin"))
+remove(list = ls(pattern = "r.*.fin"))

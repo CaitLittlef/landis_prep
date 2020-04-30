@@ -6,22 +6,18 @@ eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
 crs(eco.ne) ; proj.crs <- paste(crs(eco.ne))
 # plot(eco.ne)
 
-# Dissolve to extent
-eco.ne.dslv <- st_union(eco.ne)
-# plot(st_geometry(eco.ne.dslv))
-
 
 # Also create boundary
 bbox <- as(extent(eco.ne), "SpatialPolygons") 
 proj4string(bbox) <- paste0(proj.crs)
 bbox <- st_as_sf(bbox)
-
+# plot(st_geometry(bbox))
 
 
 # Load H2O
-lakes <- st_read("D:/Shared/BackedUp/Caitlin/Water/NAmer_lakes.shp")
-lakes <- water %>% st_transform(crs = proj.crs)
-ne.lakes <- water %>% st_crop(bbox)
+lakes <- st_read("D:/Shared/BackedUp/Caitlin/Water/NAmer_lakes.shp") ; crs(lakes)
+lakes <- lakes %>% st_transform(crs = proj.crs) ; crs(lakes) # not sure why I can't use eco.ne
+ne.lakes <- lakes %>% st_crop(bbox) # not sure why I can't use eco.ne
 plot(ne.lakes)
 
 ######################### STATES ###################################################
@@ -40,9 +36,6 @@ ne.sts <- ne.sts %>% st_transform(crs = proj.crs) %>% st_buffer(dist = 0)
 class(ne.sts)
 plot(ne.sts)
 
-ne.reg <- NAmer %>% st_crop(bbox)
-ne.reg.dslv <- st_union(ne.reg)
-plot(st_geometry(ne.reg.dslv))
 
 ## Load look-up for state fam forest areas from NWOS
 lu.st <- read.csv("st_for_area.csv")
@@ -106,7 +99,7 @@ for.ne[for.ne == 0] <- NA
 
 
 
-# What's frequency of types?
+# What's frequency of groups?
 freq <- data.frame(freq(for.ne)) ; colnames(freq) <- c("code", "count")
 (freq <- left_join(freq, lu.for, by = "code"))
 # 1	100	169556	White/Red/Jack Pine Group
@@ -132,17 +125,17 @@ for.ne[for.ne == 180] <- 400 #(pinyon/juniper to oak/pine)
 for.ne[for.ne == 200] <- 400 #(Doug-fir why?? to oak/pine)
 for.ne[for.ne == 380] <- 400 #(exotic softwood to oak/pine)
 for.ne[for.ne == 500] <- 400 #(oak/hickory to oak/pine)
-for.ne[for.ne == 600] <- 400 #(oak/gum/cypress to oak/pine)
+for.ne[for.ne == 600] <- 700 #(oak/gum/cypress to lowland)
 
-reclass <- data.frame(freq$code[1:12], freq$for.grp[1:12])
+reclass <- data.frame(freq$code[1:12] , freq$for.grp[1:12])
 reclass$new <- c("c. hw-pine", "spruce-fir", "c. hw-pine", "c. hw-pine",
                  "c. hw-pine", "c. hw pine", "c. hw-pine", "c. hw-pine",
-                 "c. hw-pine", "lowland", "n. hw", "n. hw")
+                 "lowland", "lowland", "n. hw", "n. hw")
 colnames(reclass) <- c("Forest code", "Forest type", "Reclassification")
-formattable(reclass, align =c("l","c","r")) #, 
-            list(`Forest code` = formatter(
-              "span", style = ~ style(color = "grey",font.weight = "bold")) 
-            ))
+formattable(reclass, align =c("l","c","r")) #,
+#             list(`Forest code` = formatter(
+#               "span", style = ~ style(color = "grey",font.weight = "bold"))
+#             ))
 
 
 # Get raster data ready for plotting
@@ -165,7 +158,7 @@ g
 freq(for.ne)
 
 ## FIXME: No idea why, but this writes only 120 and sets other forest types 400, 700, 8000 to NA
-# writeRaster(for.ne, "for.4type.tif")
+# writeRaster(for.ne, "for.4type.tif") #, overwrite = TRUE)
 for.type.MA <- for.ne
 
 

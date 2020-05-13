@@ -18,7 +18,7 @@ bbox <- st_as_sf(bbox)
 lakes <- st_read("D:/Shared/BackedUp/Caitlin/Water/NAmer_lakes.shp") ; crs(lakes)
 lakes <- lakes %>% st_transform(crs = proj.crs) ; crs(lakes) # not sure why I can't use eco.ne
 ne.lakes <- lakes %>% st_crop(bbox) # not sure why I can't use eco.ne
-plot(ne.lakes)
+# plot(ne.lakes)
 
 ######################### STATES ###################################################
 
@@ -155,12 +155,37 @@ g <- ggplot() +
         legend.background = element_rect(fill = "white", color = "black", size = 0,5))
 g
 
-freq(for.ne)
 
-## FIXME: No idea why, but this writes only 120 and sets other forest types 400, 700, 8000 to NA
-# writeRaster(for.ne, "for.4type.tif") #, overwrite = TRUE)
+
+
+
 for.type.MA <- for.ne
 
+
+
+
+
+
+# FIXME: No idea why, but this writes only 120 and sets other forest types 400, 700, 8000 to NA
+
+min(!is.na(getValues(for.ne))) # gives 0
+max(!is.na(getValues(for.ne))) # gives 1
+
+# yet the following suggests 800 is still in there
+cellStats(for.ne, max)
+# as does this
+freq(for.ne)
+# > freq(for.ne)
+# value   count
+#   120  483841
+#   400  685281
+#   700   38159
+#   800 2634623
+#    NA 9223362
+
+writeRaster(for.ne, "for.4type.tif", bylayer = TRUE, format = "GTiff", overwrite = TRUE)
+# says values range from 120 to 120 when writing; reload also leaves reveals only 120 has been stored.
+# turning into a stack doesn't appear to work either.
 
 
 

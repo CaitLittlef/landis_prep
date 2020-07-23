@@ -1,35 +1,95 @@
 #### HARV RECLASS AND RATES ####
 
-##########################
-#### PRELIM DATA PREP ####
-##########################
-
 ## Load data
 data <- read.csv(paste0(data.dir, "harv_summ_cntyXownXtype.csv")) # skip first row of long names
 colnames(data)
+data <- data %>% rename(ttl.plots.cnty.own.for = ttl.plots)
+
+orig <- data
+
 
 ## Gather so harv type becomes variable
 data <- data %>%
-  pivot_longer(-c(1:4,17,18),
+  pivot_longer(-c(1:4,17,18), # exclude these columns
                names_to = "harv.type",
                values_to = "plot.cnt")
 
-## Add in reclass of county, for type, harv type, owner
+
+
+## Load look-ups
 lu.fips <- read.csv(paste0(data.dir, "lu_fips.csv"))
-lu.harv <- read.csv(paste0(data.dir, "lu_harv.csv"))
+lu.harv <- read.csv(paste0(data.dir, "lu_harv.csv")) %>% dplyr::select(-order.first)
 lu.for <- read.csv(paste0(data.dir, "lu_for.csv")) %>% dplyr::select(-for.type.name)
 
+
+
+## Add county, state, harv reclass and forest type reclass
 data <- data %>%
   left_join(lu.fips, by = "fips") %>%
   left_join(lu.harv, by = "harv.type") %>%
   left_join(lu.for, by = "for.type")
 
+
+
+## Reclass ownerships
 data <- data %>%
-  mutate(own.class = ifelse(owner == 10, "public", # FS
+  mutate(own.reclass = ifelse(owner == 10, "public", # FS
                             ifelse(owner == 20, "public", # other fed
                                    ifelse(owner == 30, "public", # state or local gvt
                                           "private")))) # all private
 
+
+
+## Drop orig for and owner types
+data <- data %>% dplyr::select(-owner, -for.type, -harv.type)
+
+
+
+## Ttl plots specific to finer res (orig) county x owner x for type but not harv. Drop and use plot.cnts
+# plot.cnts are specific to harv type AND county x own x for.
+# But because I've re-classed owner, for type, and harv type, now need to combine plot.cnts.
+data <- data %>%
+  group_by(fips, county, state, yr.first, yr.last, for.reclass, own.reclass, harv.reclass) %>%
+  summarise(plot.cnt = sum(plot.cnt)) %>%
+  ungroup()
+
+
+
+## Create new summary by county, forest, owner (i.e., mgmt unit = MU
+data <- data %>%
+  group_by(fips, county, state, yr.first, yr.last, for.reclass, own.reclass) %>%
+  mutate(plot.ttl.mu = sum(plot.cnt)) %>%
+  ungroup()
+
+  
+
+## Create MU-level summaries of prop harv by each type; annual rates; harv return interval
+data <- data %>%
+  mutate(prop.plots = plot.cnt/plot.ttl.mu) %>%
+  mutate(ann.rate = prop.plots / (yr.last - yr.first + 1)) %>% #+1 for yrs inclusive
+  mutate(hri = ifelse(ann.rate == 0,NA,(1/ann.rate))) %>% # set NA if there's no harv ever.
+  dplyr::select(-yr.first, -yr.last)
+
+
+
+## Scope only harv areas
+data.harv.only <- data %>% filter(! harv.reclass  == "d.all.resid")
+
+hist(data.harv.only$hri)
+
+
+## Is it reasonable that we don't paramterize low?
+temp <- data %>% filter(for.reclass == "low", ! harv.reclass == "d.all.resid") 
+sum(temp$plot.cnt) # only 6 where some harvest took place. ok.
+
+
+
+
+
+
+
+
+hist(data[!is.na(data$hri),]$hri, nclass = 20)
 
 ## TO DOS
 
@@ -49,4 +109,4 @@ data <- data %>%
 
 # Rasterize all these MUs; remove area > 3000 ft. Send to Jacob.
 
-
+# Some counties may not have FIA data -- at all, or for a given for type or ownership. Select nearest?

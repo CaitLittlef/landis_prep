@@ -11,7 +11,7 @@ plot(eco.ne)
 bbox <- as(extent(eco.ne), "SpatialPolygons") 
 proj4string(bbox) <- paste0(proj.crs)
 bbox <- st_as_sf(bbox)
-# plot(st_geometry(bbox))
+plot(st_geometry(bbox))
 
 
 # Load H2O

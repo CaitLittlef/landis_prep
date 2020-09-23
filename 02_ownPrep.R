@@ -7,13 +7,19 @@
 
 ######################### OWNERSHIPS ###################################################
 
+
+
 ## Load ownership
 # src: https://www.fs.usda.gov/rds/archive/catalog/RDS-2017-0007 - Hewes, Jaketon H.; Butler, Brett J.; Liknes, Greg C. 2017. Forest ownership in the conterminous United States circa 2014: distribution of seven ownership types - geospatial dataset. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2017-0007
 own <- raster(paste0(data.dir, "/RDS-2017-0007/Data/forown2016"))
 plot(own)
-# Save layer of only fam ownerships for future use
+# Save layer of non-corpoate, non-public for slimming down by state. This will be for hitting fam forest trgts
 own.fam <- own
 own.fam[! own.fam == 4] <- NA
+own.noncorp <- own
+own.noncorp[own.noncorp < 4] <- NA #nix public (will be 1)
+own.noncorp[own.noncorp == 5] <- NA #nix corporate (will be 2)
+own.noncorp[own.noncorp > 0] <- 3 #set all remaining to 3 (will be 3)
 # Clip to study area (use it's own crs in mask so can avoid projecting raster)
 eco.ne.mask <- eco.ne %>%
   st_transform(crs = paste0(crs(own))) %>%
@@ -61,7 +67,6 @@ g
 
 ##### FIXME: create loop for all states. N.b., only NJ, NH, NY, PA, RI have prop -- all should.
 
-
 #################### CT ################################################################ 
 
 state.name <- "Connecticut"
@@ -82,7 +87,7 @@ plot(r)
 
 # B/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -151,7 +156,7 @@ plot(r)
 
 # B/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -246,7 +251,7 @@ plot(rc)
 
 # B/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -313,7 +318,7 @@ plot(r)
 
 # B/c only using portion of NJ, will need to scale target forest area
 # Whereas full NJ area is r <- own.ne %>%
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -386,7 +391,7 @@ plot(r)
 # b/c only using proportions of some states, scale target forest area in study area raster
 ncell(r) 
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 ncell(full) 
@@ -464,7 +469,7 @@ plot(r)
 
 # B/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -545,7 +550,7 @@ plot(r)
 
 # b/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -623,7 +628,7 @@ plot(r)
 
 # b/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -694,7 +699,7 @@ plot(r)
 
 # b/c only using proportions of some states, scale target forest area in study area raster
 # While full state area is...
-full <- own.fam %>%
+full <- own.noncorp %>%
   crop(ne.sts[ne.sts$NAME == paste0(state.name),]) %>%
   mask(ne.sts[ne.sts$NAME == paste0(state.name),])
 # Scale target by this proportion
@@ -765,7 +770,7 @@ rm(ls.r)
 fam[!is.na(fam)] <- 3
 plot(fam)
 
-# writeRaster(m, "own.fam.gte10.tiff")
+# writeRaster(m, "own.noncorp.gte10.tiff")
 
 
 
@@ -812,6 +817,28 @@ t2[t2 == 0] <- NA
 plot(t2)
 
 # writeRaster(t2, "own.all.gte10.tif")
+
+
+
+
+# ## TO DO: REMOVE ALL AREAS THAT ARE IUCN CAT 1a1b (wilderness) -- having issues w/ CRS)
+# ## Global database of PAs; for later removal of wilderness areas
+# PA.all <- st_read(dsn = "D:/Shared/BackedUp/Caitlin/GlobalPAs/data/WDPA_Apr2019-shapefile/WDPA_Apr2019-shapefile-polygons.shp")
+# 
+# ## Will nix any IUCN categories 1a and 1b (=wilderness)
+# PA.IaIb <- PA.all %>%
+#   dplyr::select(NAME, IUCN_CAT) %>%
+#   filter(IUCN_CAT == "Ia" | IUCN_CAT == "Ib") %>%
+#   fasterize(for.ne) %>%
+#   crop(for.ne) %>% mask(for.ne)
+# crs(for.ne)
+# plot(PA.IaIb)
+
+
+
+
+
+
 
 own.MA <- t2
 rm(fam, t, t2)

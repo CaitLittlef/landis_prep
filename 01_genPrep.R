@@ -2,7 +2,7 @@
 
 ## Load study area ecosections
 # src: https://data.fs.usda.gov/geodata/rastergateway/forest_type/ 
-eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
+eco.ne <- st_read(paste0(data.dir, "StudyAreaProposal.shp"))
 crs(eco.ne) ; proj.crs <- paste(crs(eco.ne))
 # plot(eco.ne)
 
@@ -38,7 +38,7 @@ plot(ne.sts)
 
 
 ## Load look-up for state fam forest areas from NWOS
-lu.st <- read.csv("st_for_area.csv")
+lu.st <- read.csv("data/st_for_area.csv")
 # Keep only m2 
 lu.st <- lu.st[,c(1,2,7,8)]
 

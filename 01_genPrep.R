@@ -2,9 +2,9 @@
 
 ## Load study area ecosections
 # src: https://data.fs.usda.gov/geodata/rastergateway/forest_type/ 
-eco.ne <- st_read(paste0(data.dir, "/StudyAreaProposal.shp"))
+eco.ne <- st_read(paste0(data.dir, "StudyAreaProposal.shp"))
 crs(eco.ne) ; proj.crs <- paste(crs(eco.ne))
-# plot(eco.ne)
+plot(eco.ne)
 
 
 # Also create boundary
@@ -38,7 +38,7 @@ plot(ne.sts)
 
 
 ## Load look-up for state fam forest areas from NWOS
-lu.st <- read.csv("st_for_area.csv")
+lu.st <- read.csv(paste0(data.dir, "st_for_area.csv"))
 # Keep only m2 
 lu.st <- lu.st[,c(1,2,7,8)]
 
@@ -46,22 +46,22 @@ lu.st <- lu.st[,c(1,2,7,8)]
 ######################### COUNTIES ###################################################
 
 # ## Load counties
-# counties <- st_read("D:/Shared/BackedUp/Caitlin/boundaries/tl_2017_us_county.shp")
+counties <- st_read("D:/Shared/BackedUp/Caitlin/boundaries/tl_2017_us_county.shp")
 # # Keep states in study area with FIPS codes; beware leading zeros lest CT gets dropped!
-# counties <- st_transform(counties, crs = proj.crs)
-# keeps.FIPS <- c("09", 23, 25, 33, 34, 36, 42, 44, 50)
-# keeps.names <- c("CT", "ME", "MA", "NH", "NJ", "NY", "PA", "RI", "VT")
-# ne.counties <- counties[counties$STATEFP %in% keeps.FIPS,]
-# lu.FIPS <- data.frame(FIPS = keeps.FIPS, st_name = keeps.names)
+counties <- st_transform(counties, crs = proj.crs)
+keeps.FIPS <- c("09", 23, 25, 33, 34, 36, 42, 44, 50)
+keeps.names <- c("CT", "ME", "MA", "NH", "NJ", "NY", "PA", "RI", "VT")
+ne.counties <- counties[counties$STATEFP %in% keeps.FIPS,]
+lu.FIPS <- data.frame(FIPS = keeps.FIPS, st_name = keeps.names)
 # 
 # # Keep only counties in study area;
-# county <- st_crop(ne.counties, bbox) ; rm(counties, ne.counties)
+county <- st_crop(ne.counties, bbox) ; #rm(counties, ne.counties)
 # 
 # # Keep only useful columns
-# county <- county %>% dplyr::select(STATEFP, COUNTYFP, GEOID, NAME)
-# county$GEOID <- droplevels(county$GEOID)
+county <- county %>% dplyr::select(STATEFP, COUNTYFP, GEOID, NAME)
+county$GEOID <- droplevels(county$GEOID)
 
-
+plot(st_geometry(county))
 
 
 ######################### FOREST TYPE ###################################################
@@ -71,12 +71,12 @@ lu.st <- lu.st[,c(1,2,7,8)]
 # fortype <- raster(paste0(data.dir, "/for_cover_type/conus_foresttype.img"))
 # plot(fortype)
 # zoom(fortype)
-forgrp <- raster(paste0(data.dir, "/for_cover_grp/conus_forestgroup.img"))
+forgrp <- raster(paste0(data.dir, "for_cover_grp/conus_forestgroup.img"))
 # plot(forgrp)
 # zoom(forgrp)
 
 # Load look-up table
-lu.for <- read.csv(paste0(data.dir, "/for_cover_grp/for_grp_code.csv"),
+lu.for <- read.csv(paste0(data.dir, "for_cover_grp/for_grp_code.csv"),
                    head = FALSE, col.names = c("code", "for.grp"))
 
 
@@ -126,6 +126,10 @@ for.ne[for.ne == 200] <- 400 #(Doug-fir why?? to oak/pine)
 for.ne[for.ne == 380] <- 400 #(exotic softwood to oak/pine)
 for.ne[for.ne == 500] <- 400 #(oak/hickory to oak/pine)
 for.ne[for.ne == 600] <- 700 #(oak/gum/cypress to lowland)
+
+# Electing to exclude lowland
+for.ne[for.ne == 600] <- NA #(oak/gum/cypress to lowland)
+for.ne[for.ne == 700] <- NA #(oak/gum/cypress to lowland)
 
 reclass <- data.frame(freq$code[1:12] , freq$for.grp[1:12])
 reclass$new <- c("c. hw-pine", "spruce-fir", "c. hw-pine", "c. hw-pine",
@@ -183,11 +187,11 @@ freq(for.ne)
 #   800 2634623
 #    NA 9223362
 
-writeRaster(for.ne, "for.4type.tif", bylayer = TRUE, format = "GTiff", overwrite = TRUE)
+writeRaster(for.ne, paste0(out.dir, "for.3type", currentDate, ".tif"), format = "GTiff", overwrite = TRUE)
 # says values range from 120 to 120 when writing; reload also leaves reveals only 120 has been stored.
 # turning into a stack doesn't appear to work either.
 
 
 
 ## Cleanup
-rm(forgrp, for.ne)
+# rm(forgrp, for.ne)

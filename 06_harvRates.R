@@ -342,3 +342,4 @@ write.csv(data, paste0(out.dir, "parametersXcountyXforXown_200903_", currentDate
 # -remove lowland/riparian forest type.
 # -for areas without forest type or ownership represented here, apply nearest neighbor.
 
+# done.

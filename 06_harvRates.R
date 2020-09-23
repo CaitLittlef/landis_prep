@@ -334,7 +334,7 @@ data <- data %>%
 
 
 currentDate <- Sys.Date()
-write.csv(data, paste0(out.dir, "LANDIS.parameters_", currentDate, ".csv"))
+write.csv(data, paste0(out.dir, "parametersXcountyXforXown_200903_", currentDate, ".csv"))
 
 
 ## In landscape:

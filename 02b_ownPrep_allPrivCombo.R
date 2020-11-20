@@ -1,4 +1,4 @@
-## Overlay public and private ownerships
+## Overlay public and private ownerships (priv combined -- had had diff classes before)
 
 ######################### OWNERSHIPS ###################################################
 

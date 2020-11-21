@@ -4,12 +4,10 @@
 
 #####################################
 ## Set working directory to input data
-# setwd("//goshawk.sefs.uw.edu/Space_Lawler/Shared/BackedUp/Caitlin")
-# wd <- "//goshawk.sefs.uw.edu/Space_Lawler/Shared/BackedUp/Caitlin"
-setwd("D:/Shared/BackedUp/Caitlin/landis_prep/landis_prep")
-wd <- "D:/Shared/BackedUp/Caitlin/landis_prep/landis_prep/"
-# setwd("C:/Users/clittlef/Google Drive/2LANDIS/landis_prep")
-# wd <- "C:/Users/clittlef/Google Drive/2LANDIS/landis_prep/"
+# wd <- setwd("//goshawk.sefs.uw.edu/Space_Lawler/Shared/BackedUp/Caitlin")
+# wd <- setwd("D:/Shared/BackedUp/Caitlin/landis_prep") 
+setwd("C:/Users/clittlef/Google Drive/2LANDIS/landis_prep")
+wd <- "C:/Users/clittlef/Google Drive/2LANDIS/landis_prep/"
 data.dir <- paste0(wd, "data/")
 out.dir <- paste0(wd, "out/")
 
@@ -189,9 +187,9 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # grey, orange, light blue, pine green, yellow, dark blue, red, pink
 
 library(RColorBrewer)
-display.brewer.all(7)
+display.brewer.all(12)
 display.brewer.pal(7, "Set1")
-palette <- brewer.pal(7, "Set2")
+# palette <- brewer.pal(7, "Set2")
 
 display.brewer.all(colorblindFriendly = TRUE)
 display.brewer.pal(8, "Dark2")

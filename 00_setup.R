@@ -6,8 +6,10 @@
 ## Set working directory to input data
 # wd <- setwd("//goshawk.sefs.uw.edu/Space_Lawler/Shared/BackedUp/Caitlin")
 # wd <- setwd("D:/Shared/BackedUp/Caitlin/landis_prep") 
-setwd("C:/Users/clittlef/Google Drive/2LANDIS/landis_prep")
-wd <- "C:/Users/clittlef/Google Drive/2LANDIS/landis_prep/"
+# setwd("C:/Users/clittlef/Google Drive/2LANDIS/landis_prep")
+# wd <- "C:/Users/clittlef/Google Drive/2LANDIS/landis_prep/"
+setwd("C:/Users/clitt/Google Drive/2LANDIS/landis_prep")
+wd <- "C:/Users/clitt/Google Drive/2LANDIS/landis_prep/"
 data.dir <- paste0(wd, "data/")
 out.dir <- paste0(wd, "out/")
 
